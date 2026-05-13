@@ -1,0 +1,62 @@
+INFO:__main__:Loading config: hsi_train
+INFO:__main__:Setting up training with 1 GPU(s)
+INFO:__main__:Config saved to ./logs/my_experiment/config.yaml
+INFO:__main__:Building trainer...
+INFO:root:Setting up torch.distributed with a timeout of 30 mins
+/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+Training failed: [enforce fail at inline_container.cc:672] . unexpected pos 1530966720 vs 1530966608
+Traceback (most recent call last):
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 1004, in save
+    _save(
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 1313, in _save
+    zip_file.write_record(name, storage, num_bytes)
+OSError: [Errno 122] Disk quota exceeded
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hensemberk/dev/ia_project/train_finetune.py", line 277, in setup_and_train
+    trainer.run()
+  File "/home/hensemberk/dev/ia_project/sam3/sam3/train/trainer.py", line 563, in run
+    self.run_train()
+  File "/home/hensemberk/dev/ia_project/sam3/sam3/train/trainer.py", line 596, in run_train
+    self.save_checkpoint(self.epoch + 1)
+  File "/home/hensemberk/dev/ia_project/sam3/sam3/train/trainer.py", line 375, in save_checkpoint
+    self._save_checkpoint(checkpoint, checkpoint_path)
+  File "/home/hensemberk/dev/ia_project/sam3/sam3/train/trainer.py", line 388, in _save_checkpoint
+    torch.save(checkpoint, f)
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 1003, in save
+    with _open_zipfile_writer(f) as opened_zipfile:
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 855, in __exit__
+    self.file_like.write_end_of_file()
+RuntimeError: [enforce fail at inline_container.cc:672] . unexpected pos 1530966720 vs 1530966608
+Fatal error: [enforce fail at inline_container.cc:672] . unexpected pos 1530966720 vs 1530966608
+Traceback (most recent call last):
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 1004, in save
+    _save(
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 1313, in _save
+    zip_file.write_record(name, storage, num_bytes)
+OSError: [Errno 122] Disk quota exceeded
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hensemberk/dev/ia_project/train_finetune.py", line 353, in <module>
+    main(args)
+  File "/home/hensemberk/dev/ia_project/train_finetune.py", line 314, in main
+    setup_and_train(cfg, num_gpus=cfg.launcher.gpus_per_node)
+  File "/home/hensemberk/dev/ia_project/train_finetune.py", line 277, in setup_and_train
+    trainer.run()
+  File "/home/hensemberk/dev/ia_project/sam3/sam3/train/trainer.py", line 563, in run
+    self.run_train()
+  File "/home/hensemberk/dev/ia_project/sam3/sam3/train/trainer.py", line 596, in run_train
+    self.save_checkpoint(self.epoch + 1)
+  File "/home/hensemberk/dev/ia_project/sam3/sam3/train/trainer.py", line 375, in save_checkpoint
+    self._save_checkpoint(checkpoint, checkpoint_path)
+  File "/home/hensemberk/dev/ia_project/sam3/sam3/train/trainer.py", line 388, in _save_checkpo

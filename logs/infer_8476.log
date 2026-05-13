@@ -1,0 +1,45 @@
+/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+Traceback (most recent call last):
+  File "/home/hensemberk/dev/ia_project/inference.py", line 289, in <module>
+    main(args)
+  File "/home/hensemberk/dev/ia_project/inference.py", line 204, in main
+    model = load_finetuned_checkpoint(model, args.checkpoint)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hensemberk/dev/ia_project/inference.py", line 110, in load_finetuned_checkpoint
+    ckpt = torch.load(checkpoint_path, map_location="cpu")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 1530, in load
+    with _open_file_like(f, "rb") as opened_file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 795, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 776, in __init__
+    super().__init__(open(name, mode))  # noqa: SIM115
+                     ^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: './logs/my_experiment/checkpoints/checkpoint.pt'
+/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+Traceback (most recent call last):
+  File "/home/hensemberk/dev/ia_project/inference.py", line 289, in <module>
+    main(args)
+  File "/home/hensemberk/dev/ia_project/inference.py", line 204, in main
+    model = load_finetuned_checkpoint(model, args.checkpoint)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hensemberk/dev/ia_project/inference.py", line 110, in load_finetuned_checkpoint
+    ckpt = torch.load(checkpoint_path, map_location="cpu")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 1530, in load
+    with _open_file_like(f, "rb") as opened_file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 795, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/serialization.py", line 776, in __init__
+    super().__init__(open(name, mode))  # noqa: SIM115
+                     ^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: './logs/my_experiment/checkpoints/checkpoint.pt'
+/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+[2026-05-12T17:50:35.229] error: *** JOB 8476 ON cvail-01 CANCELLED AT 2026-05-12T17:50:35 DUE to SIGNAL Terminated ***

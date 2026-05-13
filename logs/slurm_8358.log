@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/home/hensemberk/dev/ia_project/train_finetune.py", line 30, in <module>
+    torch.cuda.init() 
+    ^^^^^^^^^^^^^^^^^
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/cuda/__init__.py", line 447, in init
+    _lazy_init()
+  File "/opt/miniforge3/envs/sam3ju/lib/python3.12/site-packages/torch/cuda/__init__.py", line 478, in _lazy_init
+    torch._C._cuda_init()
+RuntimeError: No CUDA GPUs are available

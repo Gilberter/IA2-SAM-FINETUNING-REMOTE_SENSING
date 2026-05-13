@@ -1,0 +1,32 @@
+========================================
+Job ID:     8476
+Node:       cvail-01
+Start:      Tue May 12 05:50:20 PM -05 2026
+GPU:        NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition
+Checkpoint: ./logs/my_experiment/checkpoints/checkpoint.pt
+Confidence: 0.3
+========================================
+Total images to process: 328
+
+──────────────────────────────────────────
+Processing folder: cabeceratitles
+  Input:  /disk/SN-NVS-2026-raw/hsi_dataset/test/cabeceratitles
+  Output: ./logs/inference_results/cabeceratitles
+──────────────────────────────────────────
+  [1/328] cabecera_10-10.jpg
+Device: cuda
+
+Building SAM3 model...
+Applying LoRA adapters...
+  LoRA: replaced 32 layers (target='attn.proj', r=16, alpha=32)
+Loading checkpoint: ./logs/my_experiment/checkpoints/checkpoint.pt
+  ERROR: Failed on cabecera_10-10.jpg (exit code 1)
+  [1/328] cabecera_10-11.jpg
+Device: cuda
+
+Building SAM3 model...
+Applying LoRA adapters...
+  LoRA: replaced 32 layers (target='attn.proj', r=16, alpha=32)
+Loading checkpoint: ./logs/my_experiment/checkpoints/checkpoint.pt
+  ERROR: Failed on cabecera_10-11.jpg (exit code 1)
+  [1/328] cabecera_10-12.jpg

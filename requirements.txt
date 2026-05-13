@@ -1,0 +1,61 @@
+# =======================
+# SAM3 Complete Requirements
+# For NVIDIA RTX PRO 6000 Blackwell with CUDA 12.4
+# =======================
+
+# Core PyTorch (install separately with CUDA support)
+# torch==2.10.0  # Install with: pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cu124
+# torchvision
+# torchaudio
+
+# Numerical & Scientific Computing
+numpy>=1.24.0
+scipy>=1.11.0
+scikit-image>=0.22.0
+
+# Computer Vision & Image Processing
+opencv-python>=4.8.0
+Pillow>=10.0.0
+scikit-learn>=1.3.0
+
+# Data Processing
+pandas>=2.0.0
+pycocotools>=2.0.6
+albumentations>=1.3.1
+
+# Remote Sensing (optional but recommended)
+rasterio>=1.3.0
+shapely>=2.0.0
+geopandas>=0.13.0
+gdal>=3.7.0
+
+# Configuration & Hydra
+hydra-core>=1.3.0
+omegaconf>=2.3.0
+
+# Model & Training
+timm>=0.9.0
+transformers>=4.30.0
+fvcore>=0.1.5.post20230915
+
+# Parameter Efficient Fine-tuning
+peft>=0.4.0
+
+# Distributed Training
+submitit>=1.4.5
+wandb>=0.15.0
+
+# Utilities
+tqdm>=4.66.0
+tensorboard>=2.14.0
+einops>=0.7.0
+iopath>=0.1.10
+
+# Development & Testing
+pytest>=7.4.0
+black>=23.0.0
+flake8>=6.1.0
+mypy>=1.5.0
+
+# Performance Optimization (optional)
+flash-attn>=2.4.0; sys_platform == 'linux'

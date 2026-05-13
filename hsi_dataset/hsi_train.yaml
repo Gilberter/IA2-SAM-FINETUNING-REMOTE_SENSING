@@ -1,0 +1,455 @@
+# @package _global_
+defaults:
+  - _self_
+
+# =======================
+# PATHS (EDIT THESE)
+# =======================
+paths:
+  dataset_root: /disk/SN-NVS-2026-raw/hsi_dataset
+  experiment_log_dir: ./logs/my_experiment
+  bpe_path: /home/hensemberk/dev/ia_project/sam3/sam3/assets/bpe_simple_vocab_16e6.txt.gz
+
+# =======================
+# LORA CONFIGURATION (Memory Efficient)
+# =======================
+lora_config:
+  # LoRA adapter settings
+  enabled: True
+  rank: 16                    # LoRA rank (8-16 for most tasks)
+  lora_alpha: 32              # LoRA scaling (2x rank is good)
+  lora_dropout: 0.1           # Dropout in LoRA layers
+  
+  # Which modules to apply LoRA to
+  target_modules:
+    #- "qkv"
+    - "attn.proj"
+    # - "q_proj"               # Query projections in attention
+    # - "v_proj"               # Value projections in attention
+    # - "self_attention"       # Self-attention layers
+    # - "cross_attention"      # Cross-attention layers
+  
+  # Bias settings
+  bias: "none"               # "none", "all", or "lora_only"
+  #task_type: "FEATURE_EXTRACTION"    # For feature extraction/segmentation
+
+# =======================
+# BASIC SETTINGS (Remote Sensing Optimized)
+# =======================
+scratch:
+  enable_segmentation: True   # ✅ CRITICAL for remote sensing
+  resolution: 1008            # High resolution for fine details
+  consistent_transform: False
+  max_ann_per_img: 300        # Higher for dense remote sensing annotations
+  
+  # Batch size settings (with gradient accumulation)
+  train_batch_size: 1         # Per-GPU batch size
+  val_batch_size: 1
+  gradient_accumulation_steps: 1  # Effective batch = 2 * 2 = 4
+  
+  num_train_workers: 6
+  num_val_workers: 2
+  
+  # LoRA-SPECIFIC LEARNING RATES (Very important!)
+  # LoRA can handle higher LR than full fine-tuning
+  lr_scale: 1.0               # ✅ Full scale! LoRA is more stable
+  
+  lr_transformer: ${times:1e-3,${scratch.lr_scale}}      # 1e-3 for LoRA transformer
+  lr_vision_backbone: ${times:5e-4,${scratch.lr_scale}}  # 5e-4 for LoRA backbone adapters
+  lr_language_backbone: ${times:1e-4,${scratch.lr_scale}} # 1e-4 for LoRA text encoder
+  
+  wd: 0.01                    # Slightly lower weight decay for LoRA
+  max_epochs: 30
+  
+  # Normalization (standard for SAM3)
+  train_norm_mean: [0.5, 0.5, 0.5]
+  train_norm_std: [0.5, 0.5, 0.5]
+  val_norm_mean: [0.5, 0.5, 0.5]
+  val_norm_std: [0.5, 0.5, 0.5]
+  
+  # Data augmentation for remote sensing
+  use_random_flip: true
+  use_random_rotate: true
+  use_color_jitter: false     # Less useful for satellite/hyperspectral
+  use_elastic_deform: true    # Good for irregular objects
+  
+  # Memory optimization
+  use_activation_checkpointing: true  # ✅ Saves 30% memory
+  use_gradient_checkpointing: true
+  
+  # Matcher configuration
+  matcher:
+    _target_: sam3.train.matcher.BinaryHungarianMatcherV2
+    focal: true
+    cost_class: 2.0
+    cost_bbox: 5.0
+    cost_giou: 2.0
+    alpha: 0.25
+    gamma: 2
+    stable: False
+  
+  # Model parameters
+  d_model: 256
+  pos_embed:
+    _target_: sam3.model.position_encoding.PositionEmbeddingSine
+    num_pos_feats: ${scratch.d_model}
+    normalize: true
+    temperature: 10000
+  
+  use_presence_eval: True
+  original_box_postprocessor:
+    _target_: sam3.eval.postprocessors.PostProcessImage
+    max_dets_per_img: -1
+    use_original_ids: true
+    use_original_sizes_box: true
+    use_presence: ${scratch.use_presence_eval}
+
+# =======================
+# DATASET CONFIGURATION
+# =======================
+dataset:
+  train:
+    img_folder: ${paths.dataset_root}/train/images
+    ann_file: ${paths.dataset_root}/train/annotations.json
+  
+  val:
+    img_folder: ${paths.dataset_root}/val/images
+    ann_file: ${paths.dataset_root}/val/annotations.json
+
+# =======================
+# LOSS CONFIGURATION (Segmentation)
+# =======================
+loss:
+  _target_: sam3.train.loss.sam3_loss.Sam3LossWrapper
+  matcher: ${scratch.matcher}
+  o2m_weight: 2.0
+  o2m_matcher:
+    _target_: sam3.train.matcher.BinaryOneToManyMatcher
+    alpha: 0.3
+    threshold: 0.4
+    topk: 4
+  use_o2m_matcher_on_o2m_aux: false
+  scale_by_find_batch_size: True   # <-- stays HERE at wrapper level
+
+  
+  # Detection losses
+  loss_fns_find:
+    - _target_: sam3.train.loss.loss_fns.Boxes
+      weight_dict:
+        loss_bbox: 5.0
+        loss_giou: 2.0
+    
+    - _target_: sam3.train.loss.loss_fns.IABCEMdetr
+      weak_loss: False
+      weight_dict:
+        loss_ce: 20.0
+        presence_loss: 20.0
+      pos_weight: 10.0
+      alpha: 0.25
+      gamma: 2
+      use_presence: True
+      pos_focal: false
+      pad_n_queries: 300
+      pad_scale_pos: 1.0
+  
+  # Segmentation losses (CRITICAL for remote sensing)
+  loss_fn_semantic_seg:
+    _target_: sam3.train.loss.loss_fns.SemanticSegCriterion
+    focal: true
+    focal_alpha: 0.25
+    focal_gamma: 2.0
+    downsample: true
+    presence_head: false
+    presence_loss: false   # decoder already handles presence
+    weight_dict:
+      loss_semantic_seg: 200.0   # key name TBD — check from sed output
+      loss_semantic_dice: 10.0   # was loss_dice
+    #scale_by_find_batch_size: True
+
+# =======================
+# TRAINER CONFIGURATION
+# =======================
+trainer:
+  _target_: sam3.train.trainer.Trainer
+  
+  skip_saving_ckpts: false  # Save checkpoints for best model
+  empty_gpu_mem_cache_after_eval: True
+  skip_first_val: False
+  
+  max_epochs: ${scratch.max_epochs}
+  accelerator: cuda
+  seed_value: 42
+  
+  val_epoch_freq: 5        # Validate every 2 epochs
+  mode: train
+  
+  gradient_accumulation_steps: ${scratch.gradient_accumulation_steps}
+  
+  distributed:
+    backend: nccl
+    find_unused_parameters: True
+    gradient_as_bucket_view: True
+  
+  loss:
+    all: ${loss}
+    default:
+      _target_: sam3.train.loss.sam3_loss.DummyLoss
+  
+  # ============================================================================
+  # DATA LOADERS
+  # ============================================================================
+  data:
+    train:
+      _target_: sam3.train.data.torch_dataset.TorchDataset
+      dataset:
+        _target_: sam3.train.data.sam3_image_dataset.Sam3ImageDataset
+        img_folder: ${dataset.train.img_folder}
+        ann_file: ${dataset.train.ann_file}
+        training: true
+        load_segmentation: ${scratch.enable_segmentation}
+        max_ann_per_img: ${scratch.max_ann_per_img}
+        multiplier: 2                    # Repeat data 2x (data augmentation)
+        max_train_queries: 50000
+        max_val_queries: 50000
+        use_caching: False
+        
+        # Data augmentation transforms
+        transforms:
+          - _target_: sam3.train.transforms.basic_for_api.ComposeAPI
+            transforms:
+              # Filter empty annotations
+              # - _target_: sam3.train.transforms.filter_query_transforms.FlexibleFilterFindGetQueries
+              #   query_filter:
+              #     _target_: sam3.train.transforms.filter_query_transforms.FilterCrowds
+              
+              # Bounding box noise (for robustness)
+              - _target_: sam3.train.transforms.point_sampling.RandomizeInputBbox
+                box_noise_std: 0.1
+                box_noise_max: 20
+              
+              # Decode RLE masks
+              - _target_: sam3.train.transforms.segmentation.DecodeRle
+              
+              # Resize with aspect ratio preservation
+              - _target_: sam3.train.transforms.basic_for_api.RandomResizeAPI
+                sizes: ${scratch.resolution}
+                  # _target_: sam3.train.transforms.basic.get_random_resize_scales
+                  # size: 
+                  # min_size: 512           # Minimum size for remote sensing
+                  # rounded: false
+                max_size:
+                  _target_: sam3.train.transforms.basic.get_random_resize_max_size
+                  size: ${scratch.resolution}
+                square: true
+                consistent_transform: ${scratch.consistent_transform}
+              
+              # Pad to square
+              - _target_: sam3.train.transforms.basic_for_api.PadToSizeAPI
+                size: ${scratch.resolution}
+                consistent_transform: ${scratch.consistent_transform}
+              
+              # Convert to tensor
+              - _target_: sam3.train.transforms.basic_for_api.ToTensorAPI
+              
+              # # Filter empty targets
+              # - _target_: sam3.train.transforms.filter_query_transforms.FlexibleFilterFindGetQueries
+              #   query_filter:
+              #     _target_: sam3.train.transforms.filter_query_transforms.FilterEmptyTargets
+              
+              # Normalize
+              - _target_: sam3.train.transforms.basic_for_api.NormalizeAPI
+                mean: ${scratch.train_norm_mean}
+                std: ${scratch.train_norm_std}
+              
+              # Final empty target check
+              # - _target_: sam3.train.transforms.filter_query_transforms.FlexibleFilterFindGetQueries
+              #   query_filter:
+              #     _target_: sam3.train.transforms.filter_query_transforms.FilterEmptyTargets
+        
+        # Collate function settings
+       # _target_: sam3.train.transforms.filter_query_transforms.FlexibleFilterFindGetQueries
+      
+      shuffle: True
+      batch_size: ${scratch.train_batch_size}
+      num_workers: ${scratch.num_train_workers}
+      pin_memory: True
+      drop_last: True
+      collate_fn:
+        _target_: sam3.train.data.collator.collate_fn_api  
+        _partial_: true
+        repeats: 1
+        #num_chunks: 1
+        dict_key: all
+        with_seg_masks: ${scratch.enable_segmentation}
+    
+    val:
+      _target_: sam3.train.data.torch_dataset.TorchDataset
+      dataset:
+        _target_: sam3.train.data.sam3_image_dataset.Sam3ImageDataset
+        img_folder: ${dataset.val.img_folder}
+        ann_file: ${dataset.val.ann_file}
+        training: false
+        load_segmentation: ${scratch.enable_segmentation}
+        max_ann_per_img: 500000
+        multiplier: 1
+        
+        transforms:
+          - _target_: sam3.train.transforms.basic_for_api.ComposeAPI
+            transforms:
+              - _target_: sam3.train.transforms.segmentation.DecodeRle
+              - _target_: sam3.train.transforms.basic_for_api.RandomResizeAPI
+                sizes: ${scratch.resolution}
+                max_size:
+                  _target_: sam3.train.transforms.basic.get_random_resize_max_size
+                  size: ${scratch.resolution}
+                square: true
+                consistent_transform: False
+              - _target_: sam3.train.transforms.basic_for_api.ToTensorAPI
+              - _target_: sam3.train.transforms.basic_for_api.NormalizeAPI
+                mean: ${scratch.val_norm_mean}
+                std: ${scratch.val_norm_std}
+      
+      shuffle: False
+      batch_size: ${scratch.val_batch_size}
+      num_workers: ${scratch.num_val_workers}
+      pin_memory: True
+      drop_last: False
+      collate_fn:
+        _target_: sam3.train.data.collator.collate_fn_api
+        _partial_: true
+        #num_chunks: 1
+        repeats: 1
+        dict_key: all
+        with_seg_masks: ${scratch.enable_segmentation}
+  
+  # ============================================================================
+  # MODEL (LoRA enabled)
+  # ============================================================================
+  model:
+    _target_: sam3.model_builder.build_sam3_image_model
+    bpe_path: ${paths.bpe_path}
+    device: cuda
+    eval_mode: false
+    enable_segmentation: ${scratch.enable_segmentation}
+    # Checkpoint is loaded separately after LoRA initialization
+
+  # ============================================================================
+  # OPTIMIZER & LEARNING RATE SCHEDULING
+  # ============================================================================
+  optim:
+    # Mixed precision training
+    amp:
+      enabled: True
+      amp_dtype: bfloat16      # ✅ Most stable for fine-tuning
+    
+    optimizer:
+      _target_: torch.optim.AdamW
+      # Default: lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0.01
+    
+    # Gradient clipping
+    gradient_clip:
+      _target_: sam3.train.optim.optimizer.GradientClipper
+      max_norm: 0.3            # Conservative clipping for LoRA
+      norm_type: 2
+    
+    # Parameter group modifiers (differential LR)
+    param_group_modifiers:
+      - _target_: sam3.train.optim.optimizer.layer_decay_param_modifier
+        _partial_: True
+        layer_decay_value: 0.85  # Decay factor for earlier layers
+        apply_to: 'backbone.vision_backbone.trunk'
+        overrides:
+          - pattern: '*pos_embed*'
+            value: 1.0           # Don't decay positional embeddings
+          - pattern: '*lora*'    # LoRA adapters get full LR
+            value: 1.0
+    
+    # Learning rate scheduling
+    options:
+      lr:
+        # Transformer decoder (highest priority)
+        - scheduler:
+            _target_: sam3.train.optim.schedulers.InverseSquareRootParamScheduler
+            base_lr: ${scratch.lr_transformer}
+            timescale: 30        # Total epochs
+            warmup_steps: 500    # Warmup for 500 steps
+            cooldown_steps: 500  # Cooldown at end
+        
+        # # Vision backbone LoRA adapters
+        # - scheduler:
+        #     _target_: sam3.train.optim.schedulers.InverseSquareRootParamScheduler
+        #     base_lr: ${scratch.lr_vision_backbone}
+        #     timescale: 30
+        #     warmup_steps: 500
+        #     cooldown_steps: 500
+        #   param_names:
+        #     - 'backbone.vision_backbone.*lora*'
+        
+        # # Text encoder LoRA adapters
+        # - scheduler:
+        #     _target_: sam3.train.optim.schedulers.InverseSquareRootParamScheduler
+        #     base_lr: ${scratch.lr_language_backbone}
+        #     timescale: 30
+        #     warmup_steps: 500
+        #     cooldown_steps: 500
+        #   param_names:
+        #     - 'backbone.language_backbone.*lora*'
+      
+      # Weight decay (L2 regularization)
+      weight_decay:
+        - scheduler:
+            _target_: fvcore.common.param_scheduler.ConstantParamScheduler
+            value: ${scratch.wd}
+        - scheduler:
+            _target_: fvcore.common.param_scheduler.ConstantParamScheduler
+            value: 0.0           # No weight decay on bias/LayerNorm
+          param_names:
+            - '*bias*'
+          module_cls_names: ['torch.nn.LayerNorm']
+  
+  # ============================================================================
+  # CHECKPOINTING
+  # ============================================================================
+  checkpoint:
+    save_dir: ${launcher.experiment_log_dir}/checkpoints
+    save_freq: 1                    # Save every epoch
+    # Also keep best model
+    #monitor_metric: "val/mAP"      # Monitor mAP for remote sensing
+    #mode: "max"
+  
+  # ============================================================================
+  # LOGGING
+  # ============================================================================
+  logging:
+    tensorboard_writer:
+      _target_: sam3.train.utils.logger.make_tensorboard_logger
+      log_dir: ${launcher.experiment_log_dir}/tensorboard
+      flush_secs: 120
+      should_log: True
+    
+    wandb_writer: null             # Set to your wandb config if desired
+    
+    log_dir: ${launcher.experiment_log_dir}/logs
+    log_freq: 10                   # Log every 10 batches
+
+# =======================
+# LAUNCHER CONFIGURATION
+# =======================
+launcher:
+  num_nodes: 1
+  gpus_per_node: 1                 # ✅ LoRA works great on single GPU!
+  experiment_log_dir: ${paths.experiment_log_dir}
+  multiprocessing_context: forkserver
+
+# =======================
+# SUBMITIT CONFIGURATION (For SLURM)
+# =======================
+submitit:
+  account: null
+  partition: null
+  qos: null
+  timeout_hour: 72
+  use_cluster: False               # Set to True for SLURM clusters
+  cpus_per_task: 8
+  port_range: [10000, 65000]
+  constraint: null

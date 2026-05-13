@@ -1,0 +1,24 @@
+========================================
+Job ID:     8475
+Node:       cvail-01
+Start:      Tue May 12 05:49:42 PM -05 2026
+GPU:        NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition
+Checkpoint: ./logs/my_experiment/checkpoints/checkpoint.pt
+Confidence: 0.3
+========================================
+Total images to process: 328
+
+──────────────────────────────────────────
+Processing folder: cabeceratitles
+  Input:  /disk/SN-NVS-2026-raw/hsi_dataset/test/cabeceratitles
+  Output: ./logs/inference_results/cabeceratitles
+──────────────────────────────────────────
+  [1/328] cabecera_10-10.jpg
+  ERROR: Failed on cabecera_10-10.jpg (exit code 1)
+  [1/328] cabecera_10-11.jpg
+  ERROR: Failed on cabecera_10-11.jpg (exit code 1)
+  [1/328] cabecera_10-12.jpg
+  ERROR: Failed on cabecera_10-12.jpg (exit code 1)
+  [1/328] cabecera_10-1.jpg
+  ERROR: Failed on cabecera_10-1.jpg (exit code 1)
+  [1/328] cabecera_10-2.jpg
