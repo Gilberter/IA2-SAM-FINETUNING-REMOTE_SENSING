@@ -1,20 +1,3 @@
-"""
-SAM3 Ablation Inference — Base vs Fine-tuned
-=============================================
-Runs inference with TWO model variants on the same image:
-  1. Base SAM3 weights (pretrained only)
-  2. Fine-tuned SAM3 + LoRA weights
-
-Produces a single 3-panel figure:
-  [Original Image] | [Base SAM3 Segmentation] | [Fine-tuned SAM3 Segmentation]
-
-Each panel shows a semantic segmentation map where each pixel is colored
-by its highest-scoring category. Background / no detection = black.
-
-Usage:
-    python infer_ablation.py --image /path/to/image.jpg
-    python infer_ablation.py --image /path/to/image.jpg --confidence 0.2
-"""
 
 import argparse
 import math
@@ -30,9 +13,6 @@ from PIL import Image
 from sam3.model_builder import build_sam3_image_model
 from sam3.model.sam3_image_processor import Sam3Processor
 
-# ─────────────────────────────────────────────
-# PATHS
-# ─────────────────────────────────────────────
 
 BASE_WEIGHTS  = "/home/hensemberk/dev/ia_project/weights/sam3.pt"
 LORA_WEIGHTS  = "/home/hensemberk/dev/ia_project/logs/my_experiment/checkpoints/checkpoint_11.pt"
@@ -42,11 +22,6 @@ DEFAULT_OUT   = "/home/hensemberk/dev/ia_project/logs/ablation_result.png"
 RESOLUTION    = 1008
 CONFIDENCE    = 0.25   # same for both models
 
-# ─────────────────────────────────────────────
-# CATEGORIES & COLORS
-# Fine-tuning categories (id 1-8) + road variants
-# Black (0,0,0) = background / no detection
-# ─────────────────────────────────────────────
 
 CATEGORIES = [
     "bareland",        # id 1
@@ -73,9 +48,6 @@ CAT_COLORS = {
 }
 
 
-# ─────────────────────────────────────────────
-# LoRA — must match training exactly
-# ─────────────────────────────────────────────
 
 class LoRALinear(nn.Module):
     def __init__(self, original: nn.Linear, r: int, alpha: float, dropout: float = 0.0):
@@ -113,9 +85,6 @@ def apply_lora(model, r=16, alpha=32, dropout=0.1, target="attn.proj"):
     return model
 
 
-# ─────────────────────────────────────────────
-# MODEL BUILDERS
-# ─────────────────────────────────────────────
 
 def build_base_model(device):
     """Load SAM3 with original pretrained weights only."""
@@ -160,9 +129,6 @@ def build_lora_model(device):
     return model
 
 
-# ─────────────────────────────────────────────
-# INFERENCE
-# ─────────────────────────────────────────────
 
 def run_inference(model, image_pil, device, confidence):
     """
