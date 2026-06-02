@@ -56,9 +56,6 @@ class LoRALinear(nn.Module):
 
 LoRA insertion exclusively to the attention output projection layers `´attn.proj`
 
-<details>
-<summary><b>Click to expand full Linear Layers summary</b></summary>
-
 ```text
 MODEL TYPE:
 <class 'sam3.model.sam3_image.Sam3Image'>
